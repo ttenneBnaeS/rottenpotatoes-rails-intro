@@ -32,13 +32,13 @@ class MoviesController < ApplicationController
       params[:sort] = session[:sort]
       redir = true
     end
-    # if redir
-    #   redirect_to movies_path(params)
-    # else
+    if redir
+      redirect_to movies_path(params)
+    else
       sort_data
       restrict
       @movies = Movie.with_ratings(@requested_ratings).order(params[:sort])
-    # end
+    end
 
   end
 

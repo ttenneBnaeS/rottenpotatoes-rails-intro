@@ -12,20 +12,33 @@ class MoviesController < ApplicationController
 
   def index
 
+    session[:sort] ||= 'title';
+    session[:ratings] ||= {"G" => 1, "PG" => 1, "PG-13" => 1, "R" => 1};
+
+
     # Instantiate variables
     @on = {"G" => true, "PG" => true, "PG-13" => true, "R" => true}
-    puts @on
     @title_class = ''
-    @date = ''
+    @date_class = ''
     @all_ratings = Movie.get_all_ratings
+    redir = false
 
     # Choose which action to perform
-    if params.has_key?(:ratings)
-      restrict
-    elsif params.has_key?(:sort)
-      sort_data
+    if !params.has_key?(:ratings)
+      params[:ratings] = session[:ratings]
+      redir = true
+    end  
+    if !params.has_key?(:sort)
+      params[:sort] = session[:sort]
+      redir = true
+    end
+    puts params
+    if redir
+      redirect_to movies_path(params)
     else
-      @movies = Movie.all
+      sort_data
+      restrict
+      @movies = Movie.with_ratings(@requested_ratings).order(params[:sort])
     end
 
   end
@@ -61,31 +74,36 @@ class MoviesController < ApplicationController
   def sort_data
 
     # Sort movies based on selected sort condition
-    @movies = Movie.order(params[:sort])
+    
     @sort = (params[:sort])
 
     # Change color of column header that was selected
     if @sort == 'title'
       @title_class = 'hilite'
-      @date = ''
+      @date_class = ''
+    elsif @sort == 'release_date'
+      @title_class = ''
+      @date_class = 'hilite'
     else
       @title_class = ''
-      @date = 'hilite'
+      @date_class = ''
     end 
+    session[:sort] = params[:sort]
   end
 
   def restrict
     # Load requested ratings into array
-    requested_ratings = params[:ratings].keys
+    @requested_ratings = params[:ratings].keys
 
     # Create hash of ratings which remembers which checkboxes to keep on
     for x in @all_ratings
-      if (!requested_ratings.include? x)
+      if (!@requested_ratings.include? x)
         @on[x] = false
       end
     end
 
-    @movies = Movie.with_ratings(requested_ratings)
+    
+    session[:ratings] = params[:ratings]
   end
 
 
